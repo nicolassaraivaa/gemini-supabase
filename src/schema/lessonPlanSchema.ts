@@ -6,7 +6,7 @@ export const lessonPlanFormSchema = z.object({
   material: z.string().min(1, "A matéria escolar é obrigatório"),
   duration: z
     .number("Digite um numero!")
-    .min(1, "A duração estimada é obrigatória"),
+    .min(15, "A duração minima é de 15 minutos."),
   available_resources: z.string().optional(),
 });
 

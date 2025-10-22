@@ -78,6 +78,7 @@ const createClassPlansWithGemini = async (data: LessonFormInput) => {
 
     try {
       planoJson = JSON.parse(jsonText) as LessonPlanOutput;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       console.error("Erro no parsing JSON da IA:", jsonText);
       return NextResponse.json(
