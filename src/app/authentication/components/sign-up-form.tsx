@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/config/createClientSupabase";
+import { supabase } from "@/config/supabase";
 
 const formSchema = z
   .object({
@@ -130,7 +130,6 @@ const SignUpForm = () => {
                       placeholder="Digite o seu nome"
                       {...field}
                       type="text"
-                      // garante controlled input (evita aviso do React)
                       value={field.value ?? ""}
                       onChange={field.onChange}
                     />

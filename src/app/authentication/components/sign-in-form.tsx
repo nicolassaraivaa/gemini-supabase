@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { supabase } from "@/config/createClientSupabase";
+import { supabase } from "@/config/supabase";
 
 function translateSupabaseError(message?: string) {
   const map: Record<string, string> = {
