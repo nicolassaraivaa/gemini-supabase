@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import Header from "@/components/common/Header";
-import { supabase } from "@/config/createClientSupabase";
+import { supabase } from "@/config/supabase";
 
 import LessonPlanForm from "./components/LessonPlanForm";
 import LessonPlanResult from "./components/LessonPlanResult";
@@ -15,6 +15,10 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [name, setName] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
+  const [id, setId] = useState<string | null>(null);
+
+  const [generating, setGenerating] = useState(false);
+  const [iaResult, setIaResult] = useState<string | null>(null);
 
   useEffect(() => {
     async function checkAuth() {
@@ -27,6 +31,9 @@ export default function Home() {
 
       const userEmail = session?.user?.user_metadata?.email;
       setEmail(userEmail);
+
+      const userId = session?.user?.id;
+      setId(userId || null);
 
       if (!session?.access_token) {
         router.push("/authentication");
@@ -57,11 +64,20 @@ export default function Home() {
       <main className="mx-auto max-w-7xl px-4 py-4 md:px-6 md:py-8">
         <div className="grid gap-4 md:gap-8 lg:grid-cols-2">
           <div>
-            <LessonPlanForm />
+            <LessonPlanForm
+              id={id}
+              onGenerating={(v) => setGenerating(v)}
+              onResult={(res) => {
+                const text =
+                  (res && (res.result || res.text || res.content)) ??
+                  (typeof res === "string" ? res : JSON.stringify(res));
+                setIaResult(String(text));
+              }}
+            />
           </div>
 
           <div>
-            <LessonPlanResult />
+            <LessonPlanResult generating={generating} result={iaResult} />
           </div>
         </div>
       </main>

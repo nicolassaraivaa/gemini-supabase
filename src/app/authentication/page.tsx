@@ -4,8 +4,8 @@ import { GraduationCap, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { supabase } from "@/config/createClientSupabase";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/config/supabase";
 
 import SignInForm from "./components/sign-in-form";
 import SignUpForm from "./components/sign-up-form";

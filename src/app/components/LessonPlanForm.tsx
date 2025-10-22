@@ -1,8 +1,9 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
 import { BookOpen, Sparkles } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,23 +22,63 @@ import {
   LessonPlanFormValues,
 } from "@/schema/lessonPlanSchema";
 
-type FormValues = LessonPlanFormValues;
+type CreateLessonPlanResponse = {
+  result?: string;
+  [key: string]: unknown;
+};
 
-export default function LessonPlanForm() {
-  const handleSubmit = (values: FormValues) => {
-    console.log("Form submitted", values);
-  };
+interface LessonPlanFormProps {
+  id: string | null;
+  onGenerating?: (generating: boolean) => void;
+  onResult?: (res: CreateLessonPlanResponse) => void;
+}
 
-  const form = useForm<FormValues>({
+export default function LessonPlanForm({
+  id,
+  onGenerating,
+  onResult,
+}: LessonPlanFormProps) {
+  const form = useForm<LessonPlanFormValues>({
     resolver: zodResolver(lessonPlanFormSchema),
     defaultValues: {
       available_resources: "",
       material: "",
-      duration: 60,
+      duration: undefined,
       series: "",
       teme: "",
     },
   });
+
+  const createLessonPlan = useMutation<
+    CreateLessonPlanResponse,
+    Error,
+    LessonPlanFormValues & { userId: string | null }
+  >({
+    mutationFn: async (
+      data: LessonPlanFormValues & { userId: string | null },
+    ) => {
+      const res = await fetch("/api/classPlans", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      if (!res.ok) throw new Error("Erro ao criar plano");
+      return res.json() as Promise<CreateLessonPlanResponse>;
+    },
+    onMutate: () => onGenerating?.(true),
+    onSuccess: (data) => {
+      onResult?.(data);
+      onGenerating?.(false);
+    },
+    onError: () => onGenerating?.(false),
+  });
+
+  const handleSubmit: SubmitHandler<LessonPlanFormValues> = (values) => {
+    createLessonPlan.mutate({ ...values, userId: id });
+  };
+
+  const isLoading = createLessonPlan.status === "pending";
 
   return (
     <Card className="h-full border-none bg-white/95 shadow-2xl backdrop-blur">
@@ -63,129 +104,125 @@ export default function LessonPlanForm() {
             onSubmit={form.handleSubmit(handleSubmit)}
             className="space-y-4 md:space-y-6"
           >
-            {/* TEMA DA AULA */}
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="teme"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
-                      Tema da Aula <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: Sistema Solar e suas características"
-                        className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="teme"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
+                    Tema da Aula <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: Sistema Solar e suas características"
+                      className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* SÉRIE OU ANO */}
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="series"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
-                      Série ou Ano <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: 5º Ano do Ensino Fundamental"
-                        className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="series"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
+                    Série ou Ano <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: 5º Ano do Ensino Fundamental"
+                      className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* COMPONENTE CURRICULAR */}
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="material"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
-                      Matéria escolar <span className="text-red-500">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: Ciências"
-                        className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="material"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
+                    Matéria escolar <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Ex: Ciências"
+                      className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* DURAÇÃO ESTIMADA */}
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
-                      Duração Estimada (minutos){" "}
-                      <span className="text-red-500">*</span>{" "}
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: 60"
-                        className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
+                    Duração Estimada (minutos)
+                    <span className="text-red-500">*</span>
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="Ex: 60"
+                      value={field.value ?? ""}
+                      onChange={(e) => {
+                        const onlyNums = e.target.value.replace(/[^0-9]/g, "");
+                        field.onChange(onlyNums ? Number(onlyNums) : undefined);
+                      }}
+                      className="h-10 border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:h-12 md:text-base"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* RECURSOS DISPONÍVEIS */}
-            <div className="space-y-2">
-              <FormField
-                control={form.control}
-                name="available_resources"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
-                      Recursos Disponíveis
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Ex: Massinha, Lousa, Projeção, Computadores, etc."
-                        className="min-h-[80px] resize-none border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:min-h-[100px] md:text-base"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="available_resources"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-semibold text-gray-700 md:text-sm">
+                    Recursos Disponíveis
+                  </FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Ex: Massinha, Lousa, Projeção, Computadores, etc."
+                      className="min-h-[80px] resize-none border-gray-200 text-sm focus:border-blue-500 focus:ring-blue-500/20 md:min-h-[100px] md:text-base"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <Button
               type="submit"
-              className="h-12 w-full bg-linear-to-r from-blue-600 to-blue-700 text-sm font-semibold shadow-lg shadow-blue-500/30 transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-500/40 md:h-14 md:text-base"
+              disabled={isLoading}
+              className="h-12 w-full cursor-pointer bg-linear-to-r from-blue-600 to-blue-700 text-sm font-semibold shadow-lg shadow-blue-500/30 transition-all duration-300 hover:from-blue-700 hover:to-blue-800 hover:shadow-xl hover:shadow-blue-500/40 md:h-14 md:text-base"
             >
               <Sparkles className="mr-2 h-4 w-4 md:mr-3 md:h-5 md:w-5" />
-              <span className="hidden sm:inline">Gerar Plano com IA</span>
-              <span className="sm:hidden">Gerar com IA</span>
+              <span className="hidden sm:inline">
+                {isLoading ? "Gerando seu plano..." : "Gerar Plano com IA"}
+              </span>
+              <span className="sm:hidden">
+                {isLoading ? "Gerando..." : "Gerar com IA"}
+              </span>
             </Button>
           </form>
         </Form>

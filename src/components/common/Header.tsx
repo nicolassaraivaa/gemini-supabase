@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
 
-import { supabase } from "@/config/createClientSupabase";
+import { supabase } from "@/config/supabase";
 
 import { Avatar, AvatarFallback } from "../ui/avatar";
 import { Button } from "../ui/button";
